@@ -3,8 +3,8 @@ import { PrismaNeon } from "@prisma/adapter-neon"; // from install @prisma/adapt
 import { url } from "inspector";
 
 
-const globalForPrisma = globalThis as unknown as { 
-    prisma: PrismaClient | undefined 
+const globalForPrisma = globalThis as unknown as {
+    prisma: PrismaClient | undefined
 };
 
 function createPrismaClient() {
@@ -12,14 +12,14 @@ function createPrismaClient() {
     if (!url) {
         throw new Error("DATABASE_URL is not set.");
     }
-    const adapter = new PrismaNeon({connectionString: url});
+    const adapter = new PrismaNeon({ connectionString: url });
     return new PrismaClient({ adapter });
 }
 
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if(process.env.NODE_ENV !== "production"){
+if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = prisma;
 }
 
