@@ -1,27 +1,32 @@
-import { Button } from "./components/button";
+import { prisma } from "@/lib/db";
+import TodoApp from "./components/todos/todo-app";
 
-
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  let initialTodos: any[] = [];
   try {
-    const res = await fetch("https://api.freeapi.app/api/v1/public/randomusers/user/random");
-    const jsonData = await res.json();
-    console.log(jsonData.data);
+    initialTodos = await prisma.todo.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching initial todos on server:", error);
   }
-  catch (error) {
-    console.error("Error fetching data:", error);
-  }
+
+  // Convert Date objects to ISO strings to avoid Next.js serialization warnings for server component props
+  const serializedTodos = initialTodos.map((todo) => ({
+    ...todo,
+    createdAt: todo.createdAt.toISOString(),
+    updatedAt: todo.updatedAt.toISOString(),
+  }));
 
   return (
-    <div className='p-4 bg-gray-100 rounded-lg text-center m-4'>
-      <h1 className="text-3xl font-bold text-gray-800">Welcome to Home Page! Server Side Rendering</h1>
-
-      <p className="mt-9 text-gray-600">
-        Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ipsam ex itaque rerum molestias tempore, odio accusamus cupiditate suscipit dolore nesciunt nulla dolorum sunt sed, quasi minima. Ipsam unde asperiores velit!
-      </p>
-
-      <Button />
-    </div>
-
+    <main className="flex-1 min-h-screen bg-zinc-50 dark:bg-black py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="w-full">
+        <TodoApp initialTodos={serializedTodos} />
+      </div>
+    </main>
   );
 }
