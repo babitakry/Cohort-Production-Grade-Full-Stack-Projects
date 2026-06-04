@@ -2,13 +2,19 @@
 
 import React, { useState } from "react";
 
-// 1. Defining the properties (props) that this component accepts.
-// Here, we take an 'onAddTodo' callback function from the parent component.
+import { Todo } from "./todo-list";
+
+// OPTION A: Using Server Actions
+import { createTodo } from "@/actions/todos";
+
+// OPTION B: Using Standard REST API Fetch requests
+import { fetchCreateTodo } from "@/lib/todo-fetch";
+
 interface AddTodoFormProps {
-  onAddTodo: (title: string) => Promise<void>;
+  onTodoAdded: (todo: Todo) => void;
 }
 
-export default function AddTodoForm({ onAddTodo }: AddTodoFormProps) {
+export default function AddTodoForm({ onTodoAdded }: AddTodoFormProps) {
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,9 +24,26 @@ export default function AddTodoForm({ onAddTodo }: AddTodoFormProps) {
 
     setIsSubmitting(true);
     try {
-      await onAddTodo(title.trim());
-      setTitle("");
-    } finally {
+      // --- CHOOSE ONE OPTION ---
+      
+      // [A] Server Actions method (Direct DB Mutation)
+      const todo = await createTodo(title.trim());
+      
+      // [B] REST API Fetch method (Uncomment to use instead of Server Actions)
+      // const todo = await fetchCreateTodo(title.trim());
+
+      if (todo) {
+        onTodoAdded(todo);
+        setTitle("");
+      } else {
+        alert("Failed to create todo");
+      }
+    }
+    catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
@@ -36,7 +59,7 @@ export default function AddTodoForm({ onAddTodo }: AddTodoFormProps) {
         className="flex-1 px-4 py-3.5 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-950 dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 dark:focus:ring-zinc-50/10 dark:focus:border-zinc-50 transition-all text-sm"
         disabled={isSubmitting}
       />
-      
+
       <button
         type="submit"
         disabled={isSubmitting || !title.trim()}

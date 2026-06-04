@@ -4,6 +4,12 @@ import React, { useState } from "react";
 import AddTodoForm from "./add-todo-form";
 import TodoList, { Todo } from "./todo-list";
 
+// OPTION A: Server Actions
+import { updateTodo, deleteTodo } from "@/actions/todos";
+
+// OPTION B: Client-side API Fetch helpers
+import { fetchUpdateTodo, fetchDeleteTodo } from "@/lib/todo-fetch";
+
 interface TodoAppProps {
   initialTodos: Todo[];
 }
@@ -14,40 +20,27 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [actionId, setActionId] = useState<string | null>(null);
 
-  const handleAddTodo = async (title: string) => {
-    try {
-      const res = await fetch("/api/todos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-      const data = await res.json();
-      if (data.success && data.data) {
-        setTodos((prev) => [data.data, ...prev]);
-      } else {
-        alert(data.error || "Failed to create todo");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong");
-    }
-  };
-
   const handleToggleTodo = async (id: string, currentCompleted: boolean) => {
     setActionId(id);
     try {
-      const res = await fetch(`/api/todos/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: !currentCompleted }),
-      });
-      const data = await res.json();
-      if (data.success && data.data) {
+      // --- CHOOSE ONE OPTION ---
+
+      // [A] Server Actions Method
+      // (Note: we serialize Date fields returned by Prisma to match Client Todo interfaces)
+      const updated = await updateTodo(id, !currentCompleted);
+      const updatedTodo = updated ? {
+        ...updated,
+        createdAt: typeof updated.createdAt === 'string' ? updated.createdAt : updated.createdAt.toISOString(),
+        updatedAt: typeof updated.updatedAt === 'string' ? updated.updatedAt : updated.updatedAt.toISOString(),
+      } : null;
+
+      // [B] REST API Fetch Method (Uncomment to use instead of Server Actions)
+      // const updatedTodo = await fetchUpdateTodo(id, !currentCompleted);
+
+      if (updatedTodo) {
         setTodos((prev) =>
-          prev.map((t) => (t.id === id ? data.data : t))
+          prev.map((t) => (t.id === id ? updatedTodo : t))
         );
-      } else {
-        alert(data.error || "Failed to update todo");
       }
     } catch (err) {
       console.error(err);
@@ -60,15 +53,15 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
   const handleDeleteTodo = async (id: string) => {
     setActionId(id);
     try {
-      const res = await fetch(`/api/todos/${id}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.success) {
-        setTodos((prev) => prev.filter((t) => t.id !== id));
-      } else {
-        alert(data.error || "Failed to delete todo");
-      }
+      // --- CHOOSE ONE OPTION ---
+
+      // [A] Server Actions Method
+      await deleteTodo(id);
+
+      // [B] REST API Fetch Method (Uncomment to use instead of Server Actions)
+      // await fetchDeleteTodo(id);
+
+      setTodos((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       console.error(err);
       alert("Something went wrong");
@@ -125,7 +118,7 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
         </div>
       </div>
 
-      <AddTodoForm onAddTodo={handleAddTodo} />
+      <AddTodoForm onTodoAdded={(newTodo) => setTodos((prev) => [newTodo, ...prev])} />
 
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-center pb-5 mb-5 border-b border-zinc-100 dark:border-zinc-800/60">
         
