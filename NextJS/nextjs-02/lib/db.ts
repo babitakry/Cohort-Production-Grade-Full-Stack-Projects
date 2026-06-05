@@ -1,6 +1,6 @@
 import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon"; // from install @prisma/adapter-neon package
-import { url } from "inspector";
+
 
 
 const globalForPrisma = globalThis as unknown as {
