@@ -20,14 +20,14 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [actionId, setActionId] = useState<string | null>(null);
 
-  const handleToggleTodo = async (id: string, currentCompleted: boolean) => {
+  const handleUpdateTodo = async (id: string, title: string, completed: boolean) => {
     setActionId(id);
     try {
       // --- CHOOSE ONE OPTION ---
 
       // [A] Server Actions Method
       // (Note: we serialize Date fields returned by Prisma to match Client Todo interfaces)
-      const updated = await updateTodo(id, !currentCompleted);
+      const updated = await updateTodo(id, title, completed);
       const updatedTodo = updated ? {
         ...updated,
         createdAt: typeof updated.createdAt === 'string' ? updated.createdAt : updated.createdAt.toISOString(),
@@ -35,7 +35,7 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
       } : null;
 
       // [B] REST API Fetch Method (Uncomment to use instead of Server Actions)
-      // const updatedTodo = await fetchUpdateTodo(id, !currentCompleted);
+      // const updatedTodo = await fetchUpdateTodo(id, completed);
 
       if (updatedTodo) {
         setTodos((prev) =>
@@ -74,7 +74,7 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
     const matchesSearch = todo.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    
+
     if (filter === "active") return matchesSearch && !todo.completed;
     if (filter === "completed") return matchesSearch && todo.completed;
     return matchesSearch;
@@ -85,7 +85,7 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/[0.03] border border-black/5 dark:border-white/5 p-6 md:p-8 transition-all duration-300">
-      
+
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
           <div>
@@ -121,17 +121,16 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
       <AddTodoForm onTodoAdded={(newTodo) => setTodos((prev) => [newTodo, ...prev])} />
 
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-center pb-5 mb-5 border-b border-zinc-100 dark:border-zinc-800/60">
-        
+
         <div className="flex gap-1.5 p-1 bg-zinc-100/80 dark:bg-zinc-800/50 rounded-xl w-full sm:w-auto">
           {(["all", "active", "completed"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setFilter(t)}
-              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg capitalize transition-all ${
-                filter === t
+              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg capitalize transition-all ${filter === t
                   ? "bg-zinc-950 dark:bg-zinc-50 text-white dark:text-black shadow-sm"
                   : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-zinc-50"
-              }`}
+                }`}
             >
               {t}
             </button>
@@ -160,7 +159,7 @@ export default function TodoApp({ initialTodos }: TodoAppProps) {
       <TodoList
         todos={filteredTodos}
         actionId={actionId}
-        onToggle={handleToggleTodo}
+        onUpdate={handleUpdateTodo}
         onDelete={handleDeleteTodo}
         searchQuery={searchQuery}
       />

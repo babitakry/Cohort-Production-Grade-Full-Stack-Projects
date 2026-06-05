@@ -45,13 +45,14 @@ export async function getTodoById(id: string): Promise<Todo | null> {
     }
 }
 
-export async function updateTodo(id: string, completed: boolean): Promise<Todo> {
+export async function updateTodo(id: string, title: string, completed: boolean): Promise<Todo> {
     try {
         const updatedTodo = await prisma.todo.update({
             where: {
                 id,
             },
             data: {
+                title,
                 completed,
             },
         });

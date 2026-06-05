@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 export interface Todo {
   id: string;
@@ -11,7 +11,7 @@ export interface Todo {
 interface TodoListProps {
   todos: Todo[];
   actionId: string | null;
-  onToggle: (id: string, currentCompleted: boolean) => Promise<void>;
+  onUpdate: (id: string, title: string, completed: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   searchQuery: string;
 }
@@ -19,19 +19,41 @@ interface TodoListProps {
 export default function TodoList({
   todos,
   actionId,
-  onToggle,
+  onUpdate,
   onDelete,
   searchQuery,
 }: TodoListProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+
+  const handleStartEdit = (todo: Todo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(todo.id);
+    setEditTitle(todo.title);
+  };
+
+  const handleSave = async (id: string, completed: boolean) => {
+    if (editTitle.trim() === "") return;
+    setEditingId(null);
+    await onUpdate(id, editTitle, completed);
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+  };
+
   return (
     <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
       {todos.length > 0 ? (
         todos.map((todo) => {
           const isLoading = actionId === todo.id;
+          const isEditing = editingId === todo.id;
+
           return (
             <div
               key={todo.id}
-              onClick={() => !isLoading && onToggle(todo.id, todo.completed)}
+              onClick={() => !isLoading && !isEditing && onUpdate(todo.id, todo.title, !todo.completed)}
               className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 group cursor-pointer select-none ${
                 todo.completed
                   ? "bg-zinc-50/60 dark:bg-black/20 border-zinc-100 dark:border-zinc-950/40 opacity-75"
@@ -53,15 +75,30 @@ export default function TodoList({
                   )}
                 </div>
 
-                <span
-                  className={`text-sm font-medium transition-all duration-200 truncate ${
-                    todo.completed
-                      ? "line-through text-zinc-500 dark:text-zinc-400"
-                      : "text-zinc-950 dark:text-zinc-50"
-                  }`}
-                >
-                  {todo.title}
-                </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSave(todo.id, todo.completed);
+                      if (e.key === "Escape") handleCancelEdit(e);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 px-2 py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-950 dark:text-zinc-50 focus:outline-none focus:border-zinc-950 dark:focus:border-zinc-50"
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={`text-sm font-medium transition-all duration-200 truncate ${
+                      todo.completed
+                        ? "line-through text-zinc-500 dark:text-zinc-400"
+                        : "text-zinc-950 dark:text-zinc-50"
+                    }`}
+                  >
+                    {todo.title}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pl-4">
@@ -70,6 +107,30 @@ export default function TodoList({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
+                )}
+
+                {isEditing ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSave(todo.id, todo.completed);
+                    }}
+                    className="p-2 text-zinc-950 hover:text-black dark:text-zinc-50 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-xs font-bold"
+                    title="Save edit"
+                  >
+                    Save
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => handleStartEdit(todo, e)}
+                    disabled={isLoading}
+                    className="p-2 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    title="Edit task"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
                 )}
 
                 <button
