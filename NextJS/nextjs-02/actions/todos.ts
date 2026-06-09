@@ -1,6 +1,6 @@
 "use server";
 
-import { Todo } from "@/app/generated/prisma/client";
+import { Todo } from "@/prisma/generated/client";
 import { prisma } from "@/lib/db";
 
 
