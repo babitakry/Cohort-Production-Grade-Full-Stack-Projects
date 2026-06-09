@@ -1,4 +1,4 @@
-import { Todo } from "@/app/components/todos/todo-list";
+import { Todo } from "@/components/todos/todo-list";
 
 /**
  * Client-Side API Helper Functions (Standard REST Fetch requests)

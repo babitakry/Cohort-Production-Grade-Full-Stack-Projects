@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import TodoApp from "../components/todos/todo-app";
+import TodoApp from "../../components/todos/todo-app";
 
 export const dynamic = "force-dynamic";
 
